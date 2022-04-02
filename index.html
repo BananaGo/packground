@@ -1,0 +1,401 @@
+<html>
+    <head>
+        <title>Title of the document</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.3/svg.min.js"></script>
+    </head>
+    <body>
+        <button id="btn-save-jpg"></button>
+
+        <input type="number" id="canvas-width" value="1290" min="100" max="3000">
+        <input type="number" id="canvas-height" value="1080" min="100" max="4000">
+
+        <select id="select-resolution">
+            <option value="HD">HD</option>
+            <option value="4k">4k</option>
+            <option value="8k">8k</option>
+        </select>
+
+        <select id="select-type">
+            <option value="nn">Neural Network</option>
+            <option value="sphere">Sphere</option>
+        </select>
+
+        <input type="color" id="color-node", value="#99F1CE">
+        <input type="color" id="color-node-shadow" value="#99F1CE">
+
+        <input type="color" id="color-link" value="#99F1CE">
+        <input type="color" id="color-link-shadow", value="#99F1CE">
+
+        <input type="color" id="color-background", value="#000000">
+
+        <input type="range" id="width-node" min="0.1" max="22" value="1" step=0.1>Node width</input>
+        <input type="range" id="width-link" min="0.1" max="10" value="1" step=0.1>Link width</input>
+
+        <input type="range" id="blur-node" min="0" max="5" value="1" step=0.1>Node blur</input>
+        <input type="range" id="blur-link" min="0" max="5" value="1" step=0.1>Link blur</input>
+
+        <button id="btn-set-screen"></button>
+
+        <canvas id="canvas"></canvas>
+
+        <script>
+
+            var width = document.getElementById('canvas-width').value;
+            var height = document.getElementById('canvas-height').value;
+            var drawType = document.getElementById('select-type').value;
+
+            var hRadius = 1;
+            var numPoints = 30;
+
+            var colorPalette = {
+                1:'#99F1CE',
+                2:'#F1C299',
+                3:'#A8EB12',
+                4:'#000000'
+            }
+
+            var colors = {
+                node: colorPalette[1],
+                link: colorPalette[1],
+
+                blurNode: colorPalette[1],
+                blurLink: colorPalette[1],
+
+                background: "#000000"
+            }
+
+            var sizes = {
+                node: 10,
+                link: 10,
+                blurNode: 1,
+                blurLink: 1,
+            }
+
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+
+            function drawStroke(x1, y1, x2, y2, lSize, lColor, bColor, bSize) {
+
+                ctx.beginPath();
+
+                ctx.lineWidth = lSize;
+                ctx.strokeStyle = lColor;
+
+                ctx.shadowBlur = bSize;
+                ctx.shadowColor = bColor;
+
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+
+                ctx.stroke();
+
+                ctx.closePath();
+            } 
+
+            function drawBezier(x0, y0, x1, y1, lSize, lColor, bSize, bColor) {
+
+                ctx.beginPath();
+
+                ctx.lineWidth = lSize;
+                ctx.strokeStyle = lColor;
+
+                ctx.shadowBlur = bSize;
+                ctx.shadowColor = bColor;
+
+                bx = x0 + (x1 - x0) * 0.1;
+                by = y0 + (y1 - y0);
+
+                ctx.moveTo(x0, y0);
+                ctx.bezierCurveTo(x0, y0, bx, by, x1, y1);
+
+                ctx.stroke();
+
+                ctx.closePath();
+            }
+
+            function drawNode(x, y, nSize, nColor, bSize, bColor) {
+                ctx.beginPath();
+
+                ctx.fillStyle = nColor;
+                ctx.shadowBlur = bSize;
+                ctx.shadowColor = bColor;
+                ctx.arc(x, y, nSize, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            function generatePoinstOnSpehere() {
+                var points = [];
+                var depth = 10;
+
+                r = 500;
+                x0 = width / 2;
+                y0 = height / 2;
+                z0 = 500;
+                step = 1;
+
+                for (var i = 0; i < Math.PI; i += step) {
+
+                    for (var j = 0; j < 2 * Math.PI; j += step) {
+                                        
+                        x = x0 + r * Math.sin(i) * Math.cos(j);
+                        y = y0 + r * Math.sin(i) * Math.sin(j);
+                        z = z0 + r * Math.cos(i);
+
+                        points.push({
+                            x: x,
+                            y: y,
+                            z: z * 0.02
+                        });
+                    }
+                }
+
+                for (var i = 0; i < points.length; i++) {
+                    for (var j = 0; j < points.length; j++) {
+                        if (i != j) {
+                            var x1 = points[i].x;
+                            var y1 = points[i].y;
+                            var x2 = points[j].x;
+                            var y2 = points[j].y;
+                            drawStroke(x1, y1, x2, y2, sizes.link, colors.link, sizes.blurLink, colors.blurLink);
+                        }
+                    }
+                }
+
+                for (var i = 0; i < points.length; i++) {
+                    var x = points[i].x;
+                    var y = points[i].y;
+                    drawNode(x, y, sizes.node, colors.node, sizes.blurNode, colors.blurNode);
+                }
+            }
+
+        function generateNeuralNetwork() {
+
+            var matrix = [];
+            var depth = 10;
+            // 7
+            var layers = [2, 4, 5, 4, 5, 4, 2];
+
+            var maxNeurons = Math.max.apply(null, layers);
+
+            var cWidth = width / 2;
+            var cHeight = height / 2;
+
+            var xSteps = (width - (0.88 * (width / (layers.length)))) / layers.length;
+
+            for (var i = 0 ; i < layers.length ; i++) {
+
+                var layer = [];
+
+                var numNeurons = layers[i];
+                var ySteps = height / (numNeurons + 2);
+                var yStart = cHeight - (ySteps * (numNeurons / 2));
+
+                for (var j = 0; j < layers[i]; j++) {
+
+                    layer.push({
+                        x: xSteps * (i + 1),
+                        y: yStart + ySteps * (j + 1),
+                        z: 1
+                    });
+                }
+                matrix.push(layer);
+            }
+
+            for (var i = 0; i < matrix.length - 1; i++) {
+
+                for (var j = 0; j < matrix[i].length; j++) {
+
+                    var x1 = matrix[i][j].x;
+                    var y1 = matrix[i][j].y;
+                    var z1 = matrix[i][j].z;
+
+                    for (var k = 0; k < matrix[i + 1].length; k++) {
+
+                        var x2 = matrix[i + 1][k].x;
+                        var y2 = matrix[i + 1][k].y;
+                        drawBezier(x1, y1, x2, y2, sizes.link, colors.link, sizes.blurLink, colors.blurLink);
+                    }
+                }
+            }
+
+            for (var i = 0; i < matrix.length; i++) {
+                    for (var j = 0; j < matrix[i].length; j++) {
+                        var x = matrix[i][j].x;
+                        var y = matrix[i][j].y;
+                        var z = matrix[i][j].z;
+                        drawNode(x, y, sizes.node, colors.node, sizes.blurNode, sizes.widthNode);
+                    }
+                }
+        }
+
+        function drawPoint(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            // ctx.fillStyle = '#A8EB12';
+            ctx.fillStyle = colors.main;
+            ctx.fill();
+        }
+
+        function generateTestForDimentions() {
+            drawPoint(0, 0) 
+            drawPoint(width, 0)
+            drawPoint(width, height)
+            drawPoint(0, height)
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 1;
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 1;
+            ctx.moveTo(width / 2, 0);
+            ctx.lineTo(width / 2, height);
+            ctx.stroke();
+
+        }
+
+        function generateFront() { 
+            if (drawType == 'sphere') {
+                generatePoinstOnSpehere();
+            } else if (drawType == 'nn') {
+                generateNeuralNetwork();
+            }
+            // generateTestForDimentions();
+        }
+
+        function generateBackground() {
+            ctx.fillStyle = colors.background;
+            ctx.fillRect(0, 0, width + 100, height + 100);
+        }
+
+        function generate() {
+            // clear canvas
+            ctx.clearRect(0, 0, width, height);
+            generateBackground();
+            generateFront();
+        }
+
+        function setCanvasSizeAndGenerate(w, h) {
+
+            width = w;
+            height = h;
+
+            // set the width and height of the canvas element 
+
+            canvas.width = width;
+            canvas.height = height;
+
+            document.getElementById("btn-save-jpg").textContent = "Save as JPG (" + width + "x" + height + ")";
+
+            generate();
+        }
+
+        // UI events
+
+        window.onload = function() {
+            document.getElementById("btn-set-screen").textContent = 
+                            "Set Dimentions to current screen? " + width + "x" + height;
+            setCanvasSizeAndGenerate(
+                document.getElementById("canvas-width").value,
+                document.getElementById("canvas-height").value 
+            );
+        }
+
+        document.getElementById('btn-save-jpg').addEventListener('click', function() {
+            canvas.toBlob(function(blob) {
+                var link = document.createElement('a');
+                link.download = 'image.jpg';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+            });
+        });
+
+        document.getElementById('btn-set-screen').addEventListener('click', function() {
+            width = window.outerWidth;
+            height = window.outerHeight;
+            document.getElementById("canvas-width").value = width;
+            document.getElementById("canvas-height").value = height;
+        });
+
+        document.getElementById("select-type").addEventListener('change', function() {
+            drawType = this.value;
+            generate();
+        });
+
+        document.getElementById("select-resolution").addEventListener('change', function() {
+            switch (this.value) {
+                case "4k":
+                    width = 3850;
+                    height = 2160;
+                    break;
+                case "8k":
+                    width = 7680;
+                    height = 4320;
+                    break;
+                default:
+                    width = 1920;
+                    height = 1080;
+                    break;
+            }
+            setCanvasSizeAndGenerate(width, height);
+        });
+
+        // colors picker
+        document.getElementById("color-node").addEventListener('change', function() {
+            colors.node = this.value;
+            generate();
+        });
+
+        document.getElementById("color-node-shadow").addEventListener('change', function() {
+            colors.blurNode = this.value;
+            generate();
+        });
+
+        document.getElementById("color-link").addEventListener('change', function() {
+            colors.link = this.value;
+            generate();
+        });
+
+        document.getElementById("color-link-shadow").addEventListener('change', function() {
+            colors.blurLink = this.value;
+            generate();
+        });
+
+        // background
+        document.getElementById("color-background").addEventListener('change', function() {
+            colors.background = this.value;
+            generate();
+        });
+
+        // sizes
+        document.getElementById("blur-node").addEventListener('change', function() {
+            sizes.blurNode = this.value;
+            generate();
+        });
+
+        document.getElementById("blur-link").addEventListener('change', function() {
+            sizes.blurLink = this.value;
+            generate();
+        });
+
+        document.getElementById("width-node").addEventListener('change', function() {
+            sizes.node = this.value;
+            generate();
+        });
+
+        document.getElementById("width-link").addEventListener('change', function() {
+            sizes.link = this.value;
+            generate();
+        });
+
+        </script>
+    </body>
+</html>
