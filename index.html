@@ -312,7 +312,7 @@
         document.getElementById('btn-save-jpg').addEventListener('click', function() {
             canvas.toBlob(function(blob) {
                 var link = document.createElement('a');
-                link.download = 'image.jpg';
+                link.download = 'image.jpeg';
                 link.href = URL.createObjectURL(blob);
                 link.click();
             });
