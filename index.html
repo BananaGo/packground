@@ -69,6 +69,7 @@
             var sizes = {
                 node: 1,
                 link: 1,
+                
                 blurNode: 1,
                 blurLink: 1,
             }
@@ -95,7 +96,6 @@
             } 
 
             function drawBezier(x0, y0, x1, y1, lSize, lColor, bSize, bColor) {
-
                 ctx.beginPath();
 
                 ctx.lineWidth = lSize;
@@ -123,7 +123,9 @@
                 ctx.shadowColor = bColor;
                 ctx.arc(x, y, nSize, 0, 2 * Math.PI);
                 ctx.fill();
+                
                 ctx.stroke();
+                
                 ctx.closePath();
             }
 
@@ -138,9 +140,7 @@
                 step = 1;
 
                 for (var i = 0; i < Math.PI; i += step) {
-
                     for (var j = 0; j < 2 * Math.PI; j += step) {
-                                        
                         x = x0 + r * Math.sin(i) * Math.cos(j);
                         y = y0 + r * Math.sin(i) * Math.sin(j);
                         z = z0 + r * Math.cos(i);
@@ -173,7 +173,6 @@
             }
 
         function generateNeuralNetwork() {
-
             var matrix = [];
             var depth = 10;
             // 7
@@ -206,7 +205,6 @@
             }
 
             for (var i = 0; i < matrix.length - 1; i++) {
-
                 for (var j = 0; j < matrix[i].length; j++) {
 
                     var x1 = matrix[i][j].x;
@@ -284,12 +282,10 @@
         }
 
         function setCanvasSizeAndGenerate(w, h) {
-
             width = w;
             height = h;
 
             // set the width and height of the canvas element 
-
             canvas.width = width;
             canvas.height = height;
 
@@ -299,7 +295,6 @@
         }
 
         // UI events
-
         window.onload = function() {
             document.getElementById("btn-set-screen").textContent = 
                             "Set Dimentions to current screen? " + width + "x" + height;
