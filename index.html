@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>Title of the document</title>
+        <title>Packground Wallpaper Generator</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.3/svg.min.js"></script>
@@ -72,6 +72,7 @@
             var sizes = {
                 node: 1,
                 link: 1,
+                
                 blurNode: 1,
                 blurLink: 1,
             }
@@ -124,7 +125,9 @@
                 ctx.shadowColor = bColor;
                 ctx.arc(x, y, nSize, 0, 2 * Math.PI);
                 ctx.fill();
+                
                 ctx.stroke();
+                
                 ctx.closePath();
             }
 
@@ -312,7 +315,6 @@
         }
 
         function generateNeuralNetwork() {
-
             var matrix = [];
             var depth = 10;
             // 7
@@ -344,7 +346,6 @@
             }
 
             for (var i = 0; i < matrix.length - 1; i++) {
-
                 for (var j = 0; j < matrix[i].length; j++) {
                     var x1 = matrix[i][j].x;
                     var y1 = matrix[i][j].y;
@@ -424,9 +425,10 @@
         }
 
         function setCanvasSizeAndGenerate(w, h) {
-
             width = w;
             height = h;
+
+            // set the width and height of the canvas element 
 
             canvas.width = width;
             canvas.height = height;
@@ -449,7 +451,7 @@
         document.getElementById('btn-save-jpg').addEventListener('click', function() {
             canvas.toBlob(function(blob) {
                 var link = document.createElement('a');
-                link.download = 'image.jpg';
+                link.download = 'image.jpeg';
                 link.href = URL.createObjectURL(blob);
                 link.click();
             });
