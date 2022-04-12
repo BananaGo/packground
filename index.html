@@ -18,8 +18,11 @@
         </select>
 
         <select id="select-type">
+            <option value="blanket">Blanket</option>
+            <option value="cube">Cube</option>
+            <option value="stars">Graph</option>
             <option value="sphere">Sphere</option>
-            <option value="nn">Neural Network</option>
+            <option value="neuralNetwork">Neural Network</option>
         </select>
 
         <input type="color" id="color-node", value="#99F1CE">
@@ -77,7 +80,6 @@
             var ctx = canvas.getContext('2d');
 
             function drawStroke(x1, y1, x2, y2, lSize, lColor, bColor, bSize) {
-
                 ctx.beginPath();
 
                 ctx.lineWidth = lSize;
@@ -95,7 +97,6 @@
             } 
 
             function drawBezier(x0, y0, x1, y1, lSize, lColor, bSize, bColor) {
-
                 ctx.beginPath();
 
                 ctx.lineWidth = lSize;
@@ -127,6 +128,109 @@
                 ctx.closePath();
             }
 
+            function generateSquarePoints(x, y, cHeight, cWidth) {
+                var cubeFace = [
+                    [x - cWidth / 2, y - cHeight / 2],
+                    [x + cWidth / 2, y - cHeight / 2],
+                    [x + cWidth / 2, y + cHeight / 2],
+                    [x - cWidth / 2, y + cHeight / 2]
+                ];
+
+                for (var i = 0; i < cubeFace.length; i++) {
+                    var x1 = cubeFace[i][0];
+                    var y1 = cubeFace[i][1];
+
+                    var x2 = cubeFace[(i + 1) % 4][0];
+                    var y2 = cubeFace[(i + 1) % 4][1];
+
+                    drawNode(x1, y1, sizes.node, colors.node, sizes.blurNode, colors.blurNode);
+
+                    drawStroke(x1, y1, x2, y2, sizes.link, colors.link, sizes.blurLink, colors.blurLink);
+                }
+
+                return cubeFace;
+            }
+
+            function generateCube() {
+                var x = width / 2;
+                var y = height / 2;
+
+                var cHeight = 100;
+                var cWidth = 100;
+
+                var offset = 30;
+
+                var cubeFace = generateSquarePoints(x, y, cHeight, cWidth);
+                var cubeBack = generateSquarePoints(x + offset, y + offset, cHeight, cWidth);
+
+                for (var i = 0; i < cubeFace.length; i++) {
+                    var x1 = cubeFace[i][0];
+                    var y1 = cubeFace[i][1];
+
+                    var x2 = cubeBack[i][0];
+                    var y2 = cubeBack[i][1];
+
+                    drawStroke(x1, y1, x2, y2, sizes.link, colors.link, sizes.blurLink, colors.blurLink);
+                }
+            }
+
+            function drawDottedLine(x1, y1, x2, y2, lSize, lColor, bSize, bColor) {
+                var dx = x2 - x1;
+                var dy = y2 - y1;
+
+                var d = Math.sqrt(dx * dx + dy * dy);
+
+                var nx = dx / d;
+                var ny = dy / d;
+
+                var x = x1;
+                var y = y1;
+
+                var xi = 0;
+                var yi = 0;
+
+                for (var i = 0; i < d; i += lSize) {
+                        xi = x + nx * i;
+                        yi = y + ny * i;
+                        drawNode(xi, yi, sizes.node, colors.node, sizes.blurNode, colors.blurNode);
+                    }
+                }
+
+
+            function generateBlanket() {
+                var x = width / 2;
+                var y = height / 2;
+
+                var x0 = 0.1;
+                var xStart = width * x0;
+                var xEnd = width * (1 - x0);
+
+                var y0 = 0.2;
+                var yStart = (height * y0);
+                var yEnd = height * (1 - y0);
+
+                console.log(yEnd);
+
+                var xSpace = 5;
+                var ySpace = 20;
+
+                console.log(xStart);
+                console.log(xEnd);
+                var z = 1;
+                for (var y = yEnd ; y > yStart; y -= ySpace) {
+                    for (var x=xStart ; x < xEnd ; x = x+xSpace) {
+
+                        if (y % 10) {
+                           z = Math.random() * 8;
+                        } 
+                        drawNode(x, y + z, sizes.node, colors.node, sizes.blurNode, colors.blurNode);
+                        z = 1;
+                    }
+                    xStart += 10;
+                    xEnd -= 10;
+                }
+            }
+
             function generatePoinstOnSpehere() {
                 var points = [];
                 var depth = 10;
@@ -138,9 +242,7 @@
                 step = 1;
 
                 for (var i = 0; i < Math.PI; i += step) {
-
                     for (var j = 0; j < 2 * Math.PI; j += step) {
-                                        
                         x = x0 + r * Math.sin(i) * Math.cos(j);
                         y = y0 + r * Math.sin(i) * Math.sin(j);
                         z = z0 + r * Math.cos(i);
@@ -172,6 +274,43 @@
                 }
             }
 
+        function generateStars() {
+
+            var radius = 100;
+
+            // randomliy distribute poinst on canvas surface 
+            var points = [];
+            for (var i = 0; i < 100; i++) {
+                var x = Math.random() * width;
+                var y = Math.random() * height;
+
+                drawNode(x, y, sizes.node, colors.node, sizes.blurNode, colors.blurNode);
+
+                points.push({
+                    x: x,
+                    y: y
+                });
+            }
+
+            // draw a line between points if in range
+            for (var i = 0; i < points.length; i++) {
+                for (var j = 0; j < points.length; j++) {
+                    if (i != j) {
+                        var x1 = points[i].x;
+                        var y1 = points[i].y;
+                        var x2 = points[j].x;
+                        var y2 = points[j].y;
+
+                        var distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+
+                        if (distance < radius) {
+                            drawStroke(x1, y1, x2, y2, sizes.link, colors.link, sizes.blurLink, colors.blurLink);
+                        }
+                    }
+                }
+            }
+        }
+
         function generateNeuralNetwork() {
 
             var matrix = [];
@@ -195,7 +334,6 @@
                 var yStart = cHeight - (ySteps * (numNeurons / 2));
 
                 for (var j = 0; j < layers[i]; j++) {
-
                     layer.push({
                         x: xSteps * (i + 1),
                         y: yStart + ySteps * (j + 1),
@@ -208,13 +346,11 @@
             for (var i = 0; i < matrix.length - 1; i++) {
 
                 for (var j = 0; j < matrix[i].length; j++) {
-
                     var x1 = matrix[i][j].x;
                     var y1 = matrix[i][j].y;
                     var z1 = matrix[i][j].z;
 
                     for (var k = 0; k < matrix[i + 1].length; k++) {
-
                         var x2 = matrix[i + 1][k].x;
                         var y2 = matrix[i + 1][k].y;
                         drawBezier(x1, y1, x2, y2, sizes.link, colors.link, sizes.blurLink, colors.blurLink);
@@ -223,13 +359,13 @@
             }
 
             for (var i = 0; i < matrix.length; i++) {
-                    for (var j = 0; j < matrix[i].length; j++) {
-                        var x = matrix[i][j].x;
-                        var y = matrix[i][j].y;
-                        var z = matrix[i][j].z;
-                        drawNode(x, y, sizes.node, colors.node, sizes.blurNode, sizes.widthNode);
-                    }
+                for (var j = 0; j < matrix[i].length; j++) {
+                    var x = matrix[i][j].x;
+                    var y = matrix[i][j].y;
+                    var z = matrix[i][j].z;
+                    drawNode(x, y, sizes.node, colors.node, sizes.blurNode, sizes.widthNode);
                 }
+            }
         }
 
         function drawPoint(x, y) {
@@ -259,16 +395,20 @@
             ctx.moveTo(width / 2, 0);
             ctx.lineTo(width / 2, height);
             ctx.stroke();
-
         }
 
         function generateFront() { 
             if (drawType == 'sphere') {
                 generatePoinstOnSpehere();
-            } else if (drawType == 'nn') {
+            } else if (drawType == 'cube') {
+                generateCube();
+            } else if (drawType == 'neuralNetwork') {
                 generateNeuralNetwork();
+            } else if (drawType == 'stars') {
+                generateStars();
+            } else if (drawType == 'blanket') {
+                generateBlanket();
             }
-            // generateTestForDimentions();
         }
 
         function generateBackground() {
@@ -288,8 +428,6 @@
             width = w;
             height = h;
 
-            // set the width and height of the canvas element 
-
             canvas.width = width;
             canvas.height = height;
 
@@ -299,7 +437,6 @@
         }
 
         // UI events
-
         window.onload = function() {
             document.getElementById("btn-set-screen").textContent = 
                             "Set Dimentions to current screen? " + width + "x" + height;
